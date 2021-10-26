@@ -2,7 +2,8 @@
   "name": "front",
   "version": "0.1.0",
   "private": true,
-  "proxy": "http://localhost:8080",
+  "proxy": "http://127.0.0.1:8080/api/json",
+  "Access-Control-Allow-Origin": "*",
   "dependencies": {
     "@testing-library/jest-dom": "^5.14.1",
     "@testing-library/react": "^11.2.7",

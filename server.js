@@ -5,6 +5,17 @@ let express = require('express')
 
 
 var app = express();
+let host = "127.0.0.1"
+let port = "8080"
+
+app.use((req, res, next) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.header(
+        "Access-Control-Allow-Headers",
+        "Origin, X-Requested-With, Content-Type, Accept"
+    );
+    next();
+});
 
 var x = 0
 var y = 0
@@ -17,15 +28,14 @@ app.get('/', function (_, res) {
 
     function infinityLoop() {
         setTimeout(function () {
-            fs.writeFile("json.txt", "coordinates = '{\"x\": " + x + ", \"y\": " + y + "}'", function (err) {
+            fs.writeFile("json.txt", "{\"x\": " + x + ", \"y\": " + y + "}", function (err) {
                 if (err) return console.log(err);
-                console.log("[*] json.txt was edited");
             });
 
             x++
             y++
             infinityLoop();
-        }, 2000)
+        }, 1000)
     }
 
     if (siteReloads === 1) {
@@ -37,18 +47,14 @@ app.get('/', function (_, res) {
 })
 
 app.get('/api/json', function (_, res) {
-    fs.readFile("json.txt", "utf8", function (_, data) {
-        res.send(JSON.parse(data.split(" = ")[1].substr(1, data.split(" = ")[1].length - 2)))
+    fs.readFile("json.txt", "utf8", function (err, data) {
+        if (err) {
+            res.send({ "x": "file", "y": "crash" })
+        } else {
+            res.send(JSON.parse(data))
+        }
     })
 })
-
-app.post('/post', function (req, res) {
-    console.log("Connected to React");
-    res.redirect("/")
-})
-
-let host = "127.0.0.1"
-let port = "8080"
 
 var server = app.listen(port, function () {
     console.log("NodeJS listening at http://%s:%s", host, port)
