@@ -38,6 +38,13 @@ function drawParam() {
     ctx.font = "48px serif";
     ctx.fillText("Car 1: " + Math.sqrt(cars[0].vx * cars[0].vx + cars[0].vy * cars[0].vy), 700, 50);
     ctx.closePath();
+
+    // for(var i = 0; i < roads.length; i++){
+    //     ctx.beginPath();
+    //     ctx.font = "48px serif";
+    //     ctx.fillText(i, roads[i].x * line_width, roads[i].y * line_width);
+    //     ctx.closePath();
+    // }
 }
 
 function drawCar(x, y) {
