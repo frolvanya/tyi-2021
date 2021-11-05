@@ -16,7 +16,8 @@ var ctx = canvas.getContext('2d');
 // var crossroads = [];
 
 var line_width = 30;
-var car_width = 10;
+var car_width = 15;
+var car_length = 10;
 
 function getMap() {
     crossroads = json["crossroad_param"];
@@ -36,7 +37,8 @@ function draw() {
 function drawParam() {
     ctx.beginPath();
     ctx.font = "48px serif";
-    ctx.fillText("Car 1: " + Math.sqrt(cars[0].vx * cars[0].vx + cars[0].vy * cars[0].vy), 700, 50);
+    ctx.fillText("Car 1 speed: " + Math.sqrt(cars[0].vx * cars[0].vx + cars[0].vy * cars[0].vy), 700, 50);
+    ctx.fillText("Time: " + Math.floor(Math.floor(time/1000)/60) +":"+Math.floor(time/1000)%60+ "." + time%1000, 700, 100)
     ctx.closePath();
 
     // for(var i = 0; i < roads.length; i++){
@@ -47,9 +49,21 @@ function drawParam() {
     // }
 }
 
-function drawCar(x, y) {
+function drawCar(x, y, state, angle, rx, ry, dir) {
+    ctx.save()
     ctx.fillStyle = "red";
-    ctx.fillRect(x, y, car_width, car_width);
+    ctx.arc(rx,ry,3,0,2*Math.PI)
+    ctx.fill()
+    if(state == 1){
+        ctx.translate(rx, ry)
+        ctx.rotate(-angle)
+        console.log(-angle / Math.PI * 180)
+        ctx.fillRect(x - rx, y - ry, car_width, car_length);
+    }
+    else{
+        ctx.fillRect(x, y, car_width, car_length);
+    }
+    ctx.restore()
 }
 
 function drawCrossroad(x, y, dir) {
@@ -107,7 +121,7 @@ function mapMain() {
 }
 
 //mapMain()
-setInterval(mapMain, 10)
+var drawInterval = setInterval(mapMain, 10)
 // mapMain();
 // drawMap();
 

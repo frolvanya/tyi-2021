@@ -9,29 +9,39 @@ class Car {
         this.road = 0;
         this.croad = 0;
         this.orient = 1;//1 – по направлению оси, 2 - против направления оси
+        this.maxSpeed = 1;
+        this.accSpeed = 0.05;
+        this.decSpeed = 0.02;
+        this.state = 0;//0 - движение вперед, 1 - поворот
+        this.dir = 0;
+        this.angle = 0;
+        this.rx = 0;
+        this.ry = 0;
+        this.privA = 0;
     }
 
-    checkEndRoad() {
-        console.log(this.road)
+    checkEndRoad(x, y) {
+        x = +x.toFixed(1)
+        y = +y.toFixed(1)
         var r = roads[this.road]
         if(r.orient == 1) {
             if(this.orient == 1){
-                if(this.y + car_width >= (r.y + r.length) * line_width) {
+                if(y + car_width >= (r.y + r.length) * line_width) {
                     return true;
                 }
             } else if(this.orient == 2) {
-                if(this.y <= r.y * line_width){
+                if(y <= r.y * line_width){
                     return true;
                 }
             }
         }
         if(r.orient == 2) {
             if(this.orient == 1){
-                if(this.x + car_width >= (r.x + r.length) * line_width){
+                if(x + car_width >= (r.x + r.length) * line_width){
                     return true;
                 }
             }else if(this.orient == 2){
-                if(this.x <= r.x * line_width){
+                if(x <= r.x * line_width){
                     return true;
                 }
             }
@@ -40,9 +50,30 @@ class Car {
     }
     
     move() {
+        if(this.state == 0) {
+            this.moveForvard();
+        }
+        else if (this.state == 1) {
+            this.rotate();
+        }
+    }
+
+    moveForvard() {
         this.x += this.vx
         this.y += this.vy
-        if(this.checkEndRoad()) {
+        if(this.finishingRoad()) {
+            this.vx += this.ax;
+            this.vy += this.ay;
+            this.vx = +this.vx.toFixed(5)
+            this.vy = +this.vy.toFixed(5)
+        }
+        else if(this.calcSpeed() < this.maxSpeed){
+            this.vx -= this.ax
+            this.vy -= this.ay
+            this.vx = +this.vx.toFixed(5)
+            this.vy = +this.vy.toFixed(5)
+        }
+        if(this.checkEndRoad(this.x, this.y) === true) {
             console.log("Приехали")
             if(this.orient == 1){
                 this.croad = roads[this.road].end - 1
@@ -53,62 +84,127 @@ class Car {
             do {
                 dir = this.genDir();
                 console.log("ищу напрвление")
-            } while (crossroads[this.croad].dir[dir] == false)
-            console.log("нашел"+dir+", следующая дорога: " + crossroads[this.croad].dir[dir])
-            this.road = crossroads[this.croad].dir[dir];
-            this.moveToStartLoc(crossroads[this.croad], roads[this.road])
+            } while (crossroads[this.croad].dir.get(dir) === undefined)
+            console.log("нашел"+dir/(Math.PI)*180+", следующая дорога: " + crossroads[this.croad].dir.get(dir));
+            this.road = crossroads[this.croad].dir.get(dir);
+            this.dir = dir;
+            this.privA = this.angle;
+            this.state = 1;
+            this.chooseRotatePoint()
         }
     }
 
-    
+    chooseRotatePoint() {
+        var dang = (this.angle - this.dir * 180 / Math.PI + 360) % 360
+        if(dang == 90){
+            var a1 = 135;
+            var da = (this.angle + 90) % 360;
+            this.rx = Math.round(crossroads[this.croad].x * line_width + line_width - line_width * Math.cos((a1+da) * Math.PI / 180) / Math.cos(a1 * Math.PI / 180));
+            this.ry = Math.round(crossroads[this.croad].y * line_width + line_width + line_width * Math.sin((a1+da) * Math.PI / 180) / Math.cos(a1 * Math.PI / 180));
+            console.log(crossroads[this.croad].x * line_width, crossroads[this.croad].y* line_width, this.rx, this.ry)
+        }
+        else if (dang == 270) {
+            var a1 = 135;
+            var da = this.angle;
+            this.rx = Math.round(crossroads[this.croad].x * line_width + line_width - line_width * Math.cos((a1+da) * Math.PI / 180) / Math.cos(a1 * Math.PI / 180));
+            this.ry = Math.round(crossroads[this.croad].y * line_width + line_width + line_width * Math.sin((a1+da) * Math.PI / 180) / Math.cos(a1 * Math.PI / 180));
+            console.log(crossroads[this.croad].x * line_width, crossroads[this.croad].y* line_width, this.rx, this.ry)
+        }
+        else if (dang == 180) {
+            var a1 = 135;
+            var da1 = (this.angle + 90) % 360;
+            var da2 = this.angle;
+            var rx1 = Math.round(crossroads[this.croad].x * line_width + line_width - line_width * Math.cos((a1+da1) * Math.PI / 180) / Math.cos(a1 * Math.PI / 180));
+            var ry1 = Math.round(crossroads[this.croad].y * line_width + line_width + line_width * Math.sin((a1+da1) * Math.PI / 180) / Math.cos(a1 * Math.PI / 180));
+            var rx2 = Math.round(crossroads[this.croad].x * line_width + line_width - line_width * Math.cos((a1+da2) * Math.PI / 180) / Math.cos(a1 * Math.PI / 180));
+            var ry2 = Math.round(crossroads[this.croad].y * line_width + line_width + line_width * Math.sin((a1+da2) * Math.PI / 180) / Math.cos(a1 * Math.PI / 180));
+
+            this.rx = (rx1 + rx2) / 2
+            this.ry = (ry1 + ry2) / 2
+        }
+    }
+
+    rotate() {
+        if(this.angle * Math.PI / 180 - this.dir == 0){
+            this.state = 0;
+        }
+        else {
+            var dang = (this.angle - this.dir * 180 / Math.PI + 360) % 360
+            if(dang > 0 && dang <= 90){
+                this.angle = (this.angle + 359) % 360;
+            }
+            else {
+                this.angle = (this.angle + 1) % 360;
+            }
+            if(this.angle * Math.PI / 180 == this.dir) {
+                this.moveToStartLoc(crossroads[this.croad], roads[this.road]);
+                this.state = 0;
+            }
+        }
+    }
+
+    calcSpeed() {
+        return Math.hypot(this.vx, this.vy);
+    }
+    finishingRoad() {
+        var speed = Math.hypot(this.vx, this.vy)
+        var finishTime = speed / this.decSpeed;
+        var x = this.x + this.vx * finishTime + this.ax * finishTime * finishTime / 2;
+        var y = this.y + this.vy * finishTime + this.ay * finishTime * finishTime / 2;
+        //console.log(x, y);
+        if(this.checkEndRoad(x, y)) {
+            return true;
+        }
+        return false;
+    }
 
     moveToStartLoc(croad, road) {
-        if(croad.dir["up"] == road.id) {
+        if(croad.dir.get(Math.PI/2) == road.id) {
             this.vx = 0;
-            this.vy = -car_speed;
+            this.vy = 0;
+            this.ax = 0;
+            this.ay = this.decSpeed;
             this.x = (croad.x + 3 * CR_SIZE / 4) * line_width - car_width / 2;
             this.y = croad.y * line_width;
             this.orient = 2;
         }
-        if(croad.dir["down"] == road.id) {
+        if(croad.dir.get(3*Math.PI/2) == road.id) {
             this.vx = 0;
-            this.vy = car_speed;
+            this.vy = 0;
+            this.ax = 0;
+            this.ay = -this.decSpeed;
             this.x = (croad.x + CR_SIZE / 4) * line_width - car_width / 2;
             this.y = (croad.y + CR_SIZE) * line_width - car_width;  
             this.orient = 1;
         }
-        if(croad.dir["left"] == road.id) {
-            this.vx = -car_speed;
+        if(croad.dir.get(Math.PI) == road.id) {
+            this.vx = 0;
             this.vy = 0;
+            this.ax = this.decSpeed;
+            this.ay = 0;
             this.x = croad.x * line_width;
             this.y = (croad.y + CR_SIZE / 4) * line_width - car_width / 2;
             this.orient = 2;
         }
-        if(croad.dir["right"] == road.id) {
-            this.vx = car_speed;
+        if(croad.dir.get(0) == road.id) {
+            this.vx = 0;
             this.vy = 0;
+            this.ax = -this.decSpeed;
+            this.ay = 0;
             this.x = (croad.x + CR_SIZE) * line_width - car_width;
             this.y = (croad.y + 3 * CR_SIZE / 4) * line_width - car_width / 2;
             this.orient = 1;
         }
 
     }
-
+    
     genDir(){
         var dir = Math.floor(Math.random() * 4);
-        if(dir == 0){
-            return "up";
-        } else if (dir == 1){
-            return "right";
-        } else if (dir == 2){
-            return "down";
-        } else if (dir == 3){
-            return "left"
-        }
+        return dir * Math.PI / 2;
     }
 
     draw() {
-        drawCar(this.x, this.y)
+        drawCar(this.x, this.y, this.state, (this.angle-this.privA) * Math.PI / 180, this.rx, this.ry)
     }
 
     spawn() {
@@ -118,6 +214,8 @@ class Car {
         this.y = cry + 3 * line_width / 2 - car_width / 2
         this.road = 0;
         this.orient = 1;
+        this.ax = -this.decSpeed;
+        this.ay = 0;
     }
     // static toJSON() {
     //     return {"x": this.x, "y": this.y}
@@ -153,7 +251,7 @@ class Crossroad {
     constructor(x, y){
         this.x = x
         this.y = y
-        this.dir = {"up": false, "down": false, "left": false, "right": false}
+        this.dir = new Map();
     }
     
 
@@ -207,13 +305,13 @@ function initMap(data) {
             orient = 1;
             x = crossroads[r.start].x + CR_SIZE;
             if(crossroads[r.start].y < crossroads[r.end].y){
-                crossroads[r.start].dir["down"] = r.id;
-                crossroads[r.end].dir["up"] = r.id;
+                crossroads[r.start].dir.set(3*Math.PI/2, r.id);
+                crossroads[r.end].dir.set(Math.PI/2, r.id);
                 y = crossroads[r.start].y + CR_SIZE;
             }
             else{
-                crossroads[r.start].dir["up"] = r.id;
-                crossroads[r.end].dir["down"] = r.id;
+                crossroads[r.start].dir.set(Math.PI/2, r.id);
+                crossroads[r.end].dir.set(3*Math.PI/2, r.id);
                 y = crossroads[r.end].y + CR_SIZE;
             }
             width = CR_SIZE;
@@ -223,13 +321,13 @@ function initMap(data) {
             orient = 2;
             y = crossroads[r.start].y
             if(crossroads[r.start].x < crossroads[r.end].x){
-                crossroads[r.start].dir["right"] = r.id;
-                crossroads[r.end].dir["left"] = r.id;
+                crossroads[r.start].dir.set(0 ,r.id);
+                crossroads[r.end].dir.set(Math.PI, r.id);
                 x = crossroads[r.start].x + CR_SIZE; 
             }
             else{
-                crossroads[r.start].dir["left"] = r.id;
-                crossroads[r.end].dir["right"] = r.id;
+                crossroads[r.start].dir.set(Math.PI, r.id);
+                crossroads[r.end].dir.set(0, r.id);
                 x = crossroads[r.end].x + CR_SIZE;
             }
             width = CR_SIZE
@@ -264,7 +362,7 @@ function repeat() {
 function spawn() {
     cars[0].spawn()
     cars[0].vx = car_speed
-    moveInterval = setInterval(repeat, 5)
+    moveInterval = setInterval(repeat, deltaT)
 }
 
 function stop() {
