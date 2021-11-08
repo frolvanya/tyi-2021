@@ -15,9 +15,6 @@ var ctx = canvas.getContext('2d');
 // var roads = [];
 // var crossroads = [];
 
-var line_width = 30;
-var car_width = 15;
-var car_length = 10;
 
 function getMap() {
     crossroads = json["crossroad_param"];
@@ -49,49 +46,58 @@ function drawParam() {
     // }
 }
 
-function drawCar(x, y, state, angle, rx, ry, dir) {
+function drawCar(x, y, state, angle, rx, ry, car_width, car_length) {
     ctx.save()
-    ctx.fillStyle = "red";
+    ctx.fillStyle = "blue";
+    ctx.beginPath()
     ctx.arc(rx,ry,3,0,2*Math.PI)
     ctx.fill()
+    ctx.closePath()
     if(state == 1){
         ctx.translate(rx, ry)
         ctx.rotate(-angle)
-        console.log(-angle / Math.PI * 180)
-        ctx.fillRect(x - rx, y - ry, car_width, car_length);
+        ctx.fillRect(x - rx, y - ry, car_length, car_width);
     }
     else{
-        ctx.fillRect(x, y, car_width, car_length);
+        ctx.fillRect(x, y, car_length, car_width);
     }
     ctx.restore()
 }
 
-function drawCrossroad(x, y, dir) {
+function drawCrossroad(x, y, light) {
     var x1 = x * line_width, y1 = y * line_width
     var x2 = x * line_width + line_width * 2, y2 = y * line_width
     var x3 = x * line_width, y3 = y * line_width + line_width * 2
     var x4 = x * line_width + line_width * 2, y4 = y * line_width + line_width * 2
-    ctx.fillStyle = "black";
+    if(light == 0){
+        ctx.fillStyle = "green";
+    } else if (light == 1) {
+        ctx.fillStyle = "red";
+    }
+    
+
     ctx.fillRect(x * line_width, y * line_width, line_width * 2, line_width * 2);
-    // ctx.strokeStyle = "green";
-    // if(dir["up"]){
-    //     //ctx.lineWidth = 15;
-    //     ctx.moveTo(x1, y1)
-    //     ctx.lineTo(x2, y2);
-    //     ctx.stroke();
-    // }
+
 }
 
-function drawRoad(x, y, length, width, orient) {
+function drawRoad(x, y, length, width, orient, croad) {
+    ctx.save()
     ctx.fillStyle = "gray";
-    if(orient == 2){
-        ctx.fillRect(x * line_width, y * line_width, length * line_width, width * line_width);
+    var cx = crossroads[croad].x + CR_SIZE / 2;
+    var cy = crossroads[croad].y + CR_SIZE / 2;
+    ctx.translate(cx * line_width, cy * line_width)
+    if(orient == 1) {
+        ctx.rotate(Math.PI/2)    
     }
-    else if(orient == 1) {
-        ctx.fillRect((x - 2) * line_width, y * line_width, width * line_width, length * line_width);
-    }
-
-
+    ctx.fillRect(CR_SIZE/2 * line_width, -CR_SIZE/2 * line_width, length * line_width, width * line_width);
+    var roadLineP = CR_SIZE / 2 * line_width;
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 3;
+    ctx.setLineDash([roadLineLength, 5])
+    ctx.moveTo(roadLineP, 0);
+    ctx.lineTo(roadLineP + length * line_width, 0);
+    ctx.stroke();
+    ctx.restore();
 }
 
 function drawCars() {
