@@ -147,6 +147,9 @@ class Car {
     }
 
     rotate() {
+        if(crossroads[this.croad].light == 1){
+            return
+        }
         if(this.angle * Math.PI / 180 - this.dir == 0){
             this.state = 0;
         }
@@ -278,7 +281,7 @@ class Crossroad {
         this.x = x
         this.y = y
         this.dir = new Map();
-        this.light = 0;
+        this.light = 0; // 0 - green, 1 - red
         //this.time = 0;
         this.interval = 2000;
     }
